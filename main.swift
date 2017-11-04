@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import WebKit
+
 
 func Main() {
     var distributionAmout: Double = 2000000;
@@ -97,6 +97,7 @@ func Main() {
 
 Main()
 
+//import WebKit
 // Getting total number of ETH being contributed
 //let eosUrlString = "https://eos.io/"
 //guard let eosUrl = URL(string: eosUrlString) else {
