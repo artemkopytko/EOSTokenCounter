@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import WebKit
 
 func Main() {
     var distributionAmout: Double = 2000000;
@@ -26,8 +27,7 @@ func Main() {
     guard let url = URL(string: jsonUrlStrinng) else {
         return
     }
-
-
+    
     func setParam(Parameter parameter: String, Value value:Double) -> Void {
         switch parameter {
         case "myContribution":
@@ -41,20 +41,40 @@ func Main() {
             exit(0);
         }
     }
-    repeat {
-    URLSession.shared.dataTask(with: url) { data, response, error in
-        guard let data = data else {
+    
+    func getEthereumPrice(withRequest request: URL, withCompletion completion: @escaping(EthereumPrice?, Error?) -> Void){
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data else {
+                completion(nil, error)
+                return
+            }
+            do {
+                let ethereumPrice = try JSONDecoder().decode(EthereumPrice.self, from: data)
+                etherPriceUSD = ethereumPrice.USD
+                completion(ethereumPrice, nil)
+            } catch let jsonError {
+                print("Error serializing json", jsonError)
+                completion(nil, jsonError)
+            }
+            }.resume()
+    }
+    
+    getEthereumPrice(withRequest: url, withCompletion: { ethereumPrice, error in
+        if error != nil {
             return
-        }
-        do {
-            let ethereumPrice = try JSONDecoder().decode(EthereumPrice.self, from: data)
+        } else if let ethereumPrice = ethereumPrice {
             etherPriceEUR = ethereumPrice.EUR
             etherPriceUSD = ethereumPrice.USD
-        } catch let jsonError {
-            print("Error serializing json", jsonError)
         }
-    }.resume()
-
+    })
+    repeat {
+        getEthereumPrice(withRequest: url, withCompletion: { ethereumPrice, error in
+            if error != nil {
+            } else if let ethereumPrice = ethereumPrice {
+                etherPriceEUR = ethereumPrice.EUR
+                etherPriceUSD = ethereumPrice.USD
+            }
+        })
     print("Enter your contribution(ETH): ", terminator: "");
     if let myCont = readLine() {
         setParam(Parameter: "myContribution", Value: Double(myCont)!);
@@ -77,34 +97,36 @@ func Main() {
 
 Main()
 
-
-//    func getDetail(withRequest request: URL, withCompletion completion: @escaping(EthereumPrice?, Error?) -> Void){
-//        URLSession.shared.dataTask(with: request) { data, response, error in
-//            guard let data = data else {
-//                completion(nil, error)
-//                return
-//            }
-//            do {
-//                let ethereumPrice = try JSONDecoder().decode(EthereumPrice.self, from: data)
-//                etherPriceUSD = ethereumPrice.USD
-//                completion(ethereumPrice, nil)
-//                //            print("\nEthereum's now $\(ethereumPrice.USD) & €\(ethereumPrice.EUR)")
-//            } catch let jsonError {
-//                print("Error serializing json", jsonError)
-//                completion(nil, jsonError)
-//            }
-//            }.resume()
+// Getting total number of ETH being contributed
+//let eosUrlString = "https://eos.io/"
+//guard let eosUrl = URL(string: eosUrlString) else {
+//    return
+//}
+// func getEOS_TotalContribution(withRequest request: URL, withCompletion completion: @escaping(String?, Error?) -> Void){
+//URLSession.shared.dataTask(with: request) { data, response, error in
+//    guard let data = data else {
+//        completion(nil, error)
+//        return
 //    }
+//    do {
 //
-//    getDetail(withRequest: url, withCompletion: { detail, error in
-//        if error != nil {
-//            //handle error
-//        } else if let detail = detail {
-//            print(detail.USD)
-//            print(detail.EUR)
-//            //You can use detail here
-//        }
-//    })
+//    } catch {
+//
+//    }
+//    }.resume()
+//}
+//do {
+//    let myHTMLString = try String(contentsOf: eosUrl, encoding: .utf8)
+//
+//    print("HTML : \(myHTMLString)")
+//    let range = myHTMLString.range(of: "(?<=<div class=\"eth-received count\">)[^.]+(?=</div>)", options: .regularExpression)
+//    if range != nil {
+//        let found = myHTMLString.substring(with: range!)
+//        print("found: \(found)") // found: google
+//    }
+//} catch let error {
+//    print("Error: \(error)")
+//}
 
 
 
